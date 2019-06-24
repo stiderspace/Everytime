@@ -9,17 +9,15 @@ using System.Xml.Linq;
 
 namespace EveryTime
 {
-    class EventHandler : IEventHandler, IEventHandlerPlayerJoin, IEventHandlerLateDisconnect
+    class EventHandler : IEventHandler, IEventHandlerPlayerJoin, IEventHandlerLateDisconnect, IEventHandlerWaitingForPlayers
     {
         private readonly EveryTime plugin;
-
 
         public EventHandler(EveryTime plugin)
         {
             this.plugin = plugin;
             plugin.onlinePlayerList = new List<PlayerData> { };
         }
-
 
         public void OnPlayerJoin(PlayerJoinEvent ev)
         {
@@ -48,7 +46,6 @@ namespace EveryTime
             {
                 plugin.Debug("there was an oepsie. My online playerlist is NULL, im not loggin this player right now");
             }
-
         }
 
         public void OnLateDisconnect(LateDisconnectEvent ev)
@@ -68,7 +65,6 @@ namespace EveryTime
             }
         }
 
-
         private void saveExistingUser(DateTime logoutTime, PlayerData player)
         {
             XDocument logFile = XDocument.Load(plugin.logFileLocation);
@@ -79,8 +75,6 @@ namespace EveryTime
             int totalTime = int.Parse(user.Element("TotalTime").Value);
             int timeThisWeek = int.Parse(user.Element("TotalTimeWeek").Value);
             DateTime lastLogin = DateTime.Parse(user.Element("LastLogin").Value);
-
-
 
             totalTime = totalTime + playTime;
 
@@ -145,6 +139,15 @@ namespace EveryTime
             XDocument logFile = XDocument.Load(plugin.logFileLocation);
             logFile.Element("Users").Elements("User").Where(x => x.Attribute("steamId").Value == steamId).FirstOrDefault().Remove();
             SaveFile(logFile);
+        }
+
+        public void OnWaitingForPlayers(WaitingForPlayersEvent ev)
+        {
+            foreach (PlayerData player in plugin.onlinePlayerList.ToList())
+            {
+                save(DateTime.Now, player);
+                plugin.onlinePlayerList.Remove(player);
+            }
         }
     }
 }
