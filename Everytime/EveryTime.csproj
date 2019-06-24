@@ -68,8 +68,5 @@
     <Compile Include="commands\RemovePlayTimeCommand.cs" />
     <Compile Include="commands\ResetPlayTimeCommand.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
