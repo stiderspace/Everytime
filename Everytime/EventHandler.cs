@@ -6,12 +6,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
+using UnityEngine;
 
 namespace EveryTime
 {
-    class EventHandler : IEventHandler, IEventHandlerPlayerJoin, IEventHandlerLateDisconnect, IEventHandlerWaitingForPlayers
+    class EventHandler : IEventHandler, IEventHandlerPlayerJoin, IEventHandlerLateDisconnect, IEventHandlerRoundRestart,IEventHandlerFixedUpdate
     {
         private readonly EveryTime plugin;
+        private float timer;
 
         public EventHandler(EveryTime plugin)
         {
@@ -59,30 +61,33 @@ namespace EveryTime
                 if (!playersOnline.Contains(player.player))
                 {
                     plugin.Info("player " + player.player.Name + " is logging out");
-                    save(DateTime.Now, player);
                     plugin.onlinePlayerList.Remove(player);
                 }
             }
         }
 
-        private void saveExistingUser(DateTime logoutTime, PlayerData player)
+        private void saveExistingUser(float time, PlayerData player)
         {
             XDocument logFile = XDocument.Load(plugin.logFileLocation);
             XElement user = logFile.Element("Users").Elements("User").Where(x => x.Attribute("steamId").Value == player.player.SteamId).FirstOrDefault();
 
 
-            int playTime = Convert.ToInt32(Math.Round((logoutTime - player.loginTime).TotalMinutes));
-            int totalTime = int.Parse(user.Element("TotalTime").Value);
-            int timeThisWeek = int.Parse(user.Element("TotalTimeWeek").Value);
+            float playTime = time;
+            float totalTime = int.Parse(user.Element("TotalTime").Value);
+            float timeThisWeek = int.Parse(user.Element("TotalTimeWeek").Value);
             DateTime lastLogin = DateTime.Parse(user.Element("LastLogin").Value);
 
+            plugin.Info("old total: " + totalTime);
             totalTime = totalTime + playTime;
+            plugin.Info("playtime: " + playTime);
+            plugin.Info("total: " + totalTime);
 
-            if (checkweek(player.loginTime, logoutTime))
+
+            if (checkweek(player.loginTime, lastLogin))
             { timeThisWeek = timeThisWeek + playTime; }
             else
             { timeThisWeek = playTime; }
-
+            
             user.SetElementValue("Username", player.player.Name);
             user.SetElementValue("Rank", player.player.GetUserGroup().Name);
             user.SetElementValue("TotalTime", totalTime);
@@ -90,17 +95,17 @@ namespace EveryTime
             user.SetElementValue("LastLogin", lastLogin);
             SaveFile(logFile);
         }
-        private void saveNewUser(DateTime logoutTime, PlayerData player)
+        private void saveNewUser(float time, PlayerData player)
         {
+            plugin.Debug("saving new player with time: " + time);
             XDocument logFile = XDocument.Load(plugin.logFileLocation);
-            int playTime = Convert.ToInt32(Math.Round((logoutTime - player.loginTime).TotalMinutes));
 
             logFile.Element("Users").Add(
                 new XElement("User", new XAttribute("steamId", player.player.SteamId),
                 new XElement("Username", player.player.Name),
                 new XElement("Rank", player.player.GetUserGroup().Name),
-                new XElement("TotalTime", playTime),
-                new XElement("TotalTimeWeek", playTime),
+                new XElement("TotalTime", time),
+                new XElement("TotalTimeWeek",time),
                 new XElement("LastLogin", player.loginTime)));
             SaveFile(logFile);
         }
@@ -110,15 +115,18 @@ namespace EveryTime
             logFile.Save(plugin.logFileLocation);
         }
 
-        public void save(DateTime logoutTime, PlayerData player)
+        public void save(float time, PlayerData player)
         {
             if (LogHelper.userHasData(player.player.SteamId, plugin))
             {
-                saveExistingUser(logoutTime, player);
+                plugin.Info("saving existing player: "+ player.player.Name);
+                saveExistingUser(time, player);
+                
             }
             else
             {
-                saveNewUser(logoutTime, player);
+                plugin.Info("saving new player: " + player.player.Name);
+                saveNewUser(time ,player);
             }
         }
 
@@ -141,13 +149,25 @@ namespace EveryTime
             SaveFile(logFile);
         }
 
-        public void OnWaitingForPlayers(WaitingForPlayersEvent ev)
+        public void OnRoundRestart(RoundRestartEvent ev)
         {
             foreach (PlayerData player in plugin.onlinePlayerList.ToList())
             {
-                save(DateTime.Now, player);
                 plugin.onlinePlayerList.Remove(player);
             }
+        }
+
+        public void OnFixedUpdate(FixedUpdateEvent ev)
+        {
+            if(timer >= 60f)
+            {
+                foreach (PlayerData player in plugin.onlinePlayerList.ToList())
+                {
+                    save(timer ,player);
+                }
+                timer = 0;
+            }
+            timer += Time.deltaTime;
         }
     }
 }

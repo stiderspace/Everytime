@@ -54,6 +54,7 @@
     <Compile Include="commands\GetPlayTimeCommand.cs" />
     <Compile Include="commands\GetRankListCommand.cs" />
     <Compile Include="commands\GetTopCommand.cs" />
+    <Compile Include="commands\SemiNumericComparer.cs" />
     <Compile Include="EventHandler.cs" />
     <Compile Include="EveryTime.cs" />
     <Compile Include="LogHelper.cs" />
@@ -61,6 +62,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="commands\RemovePlayTimeCommand.cs" />
     <Compile Include="commands\ResetPlayTimeCommand.cs" />
+    <Compile Include="TestEventHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -53,7 +53,7 @@ namespace EveryTime
         private List<string> getTotalTop(IEnumerable<XElement> users)
         {
             List<string> data = new List<string>();
-            List<XElement> sorted = users.OrderByDescending(o => o.Element("TotalTime").Value).ToList();
+            List<XElement> sorted = users.OrderByDescending(o => o.Element("TotalTime").Value, new SemiNumericComparer()).ToList();
 
             int top = 10;
             if (sorted.ToArray().Length != top)

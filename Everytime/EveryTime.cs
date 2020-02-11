@@ -77,7 +77,7 @@ namespace EveryTime
             
             this.Debug("setting things up here i go");
             this.AddEventHandlers(new EventHandler(this));
-
+            //this.AddEventHandlers(new TestEventHandler(this));
                                  
             this.AddCommand("getPlayTime", new GetPlayTimeCommand(this)); // gets the playtime of a user and current minut played if online
             this.AddCommand("getList", new GetListCommand(this)); // gets the list of total playtimes by player
